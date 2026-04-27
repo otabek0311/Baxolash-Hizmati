@@ -1,0 +1,6 @@
+{
+  "name": "QR Hujjat Tizimi",
+  "description": "A modern, clean document management system with integrated QR code processing and page-level document tracking.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}
