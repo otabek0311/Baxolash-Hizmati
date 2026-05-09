@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+uploads/*
+processed/*
+!uploads/.gitkeep
+!processed/.gitkeep

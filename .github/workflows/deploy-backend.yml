@@ -1,0 +1,38 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy Backend via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            cd /var/www/qr-hujjat-tizimi
+            git pull origin main
+
+            cd Backend
+            [ -f .env ] || { echo "XATO: .env fayli topilmadi!"; exit 1; }
+
+            npm install --production=false && \
+            npx prisma generate && \
+            npx prisma migrate deploy && \
+            npm run build
+
+            mkdir -p uploads processed
+
+            pm2 restart qr-backend || pm2 start dist/app.js --name qr-backend
+            pm2 save
+
+            echo "Backend deploy muvaffaqiyatli!"

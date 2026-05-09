@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model GeneralAdmin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+}
+
+model Company {
+  id           String        @id @default(uuid())
+  name         String
+  slug         String        @unique
+  domain       String?
+  status       CompanyStatus @default(PROVISIONING)
+
+  // Ports (auto-assigned)
+  frontendPort Int           @unique
+  backendPort  Int           @unique
+  dbPort       Int           @unique
+  dbName       String        @unique
+  dbUser       String        @unique
+  dbPassword   String
+
+  // Contact
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  notes        String?
+
+  // Pricing
+  monthlyPrice Decimal       @default(0) @db.Decimal(12, 2)
+  currency     String        @default("UZS")
+
+  // Provisioning
+  provisionedAt DateTime?
+  serverPath    String?
+
+  payments     Payment[]
+  metrics      ServerMetric[]
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+enum CompanyStatus {
+  PROVISIONING
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  company       Company       @relation(fields: [companyId], references: [id])
+  companyId     String
+
+  amount        Decimal       @db.Decimal(12, 2)
+  currency      String        @default("UZS")
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+
+  periodStart   DateTime
+  periodEnd     DateTime
+
+  // Payment gateway data
+  transactionId String?
+  paymentUrl    String?
+  gatewayData   Json?
+
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum PaymentMethod {
+  CLICK
+  PAYME
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+model ServerMetric {
+  id          String   @id @default(uuid())
+  company     Company  @relation(fields: [companyId], references: [id])
+  companyId   String
+
+  cpuPercent  Float
+  memoryMb    Float
+  diskMb      Float
+  isRunning   Boolean  @default(true)
+
+  recordedAt  DateTime @default(now())
+
+  @@index([companyId, recordedAt])
+}

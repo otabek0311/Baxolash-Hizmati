@@ -1,0 +1,259 @@
+
+> management-backend@1.0.0 dev
+> ts-node-dev --respawn --transpile-only src/server.ts
+
+[INFO] 10:17:50 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.9.3)
+Management API running on port 7000
+[Provisioning] Nginx config yozishda xato (root kerak bo'lishi mumkin): Error: ENOENT: no such file or directory, open 'D:\etc\nginx\sites-available\lebl'
+    at Object.writeFileSync (node:fs:2412:20)
+    at provisionCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:119:10)
+    at createCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:190:21) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\etc\\nginx\\sites-available\\lebl'
+}
+time="2026-05-01T10:24:51+05:00" level=warning msg="C:\\opt\\qrhujjat\\companies\\lebl\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+unable to get image 'node:20-alpine': error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/images/node:20-alpine/json": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+[Provisioning] lebl uchun xato: Error: Command failed: docker-compose -f C:\opt\qrhujjat\companies\lebl\docker-compose.yml up -d
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at provisionCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:129:13)
+    at createCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:190:21) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 30608,
+  stdout: null,
+  stderr: null
+}
+[Companies] Provisioning xatosi (lebl): Error: Command failed: docker-compose -f C:\opt\qrhujjat\companies\lebl\docker-compose.yml up -d
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at provisionCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:129:13)
+    at createCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:190:21) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 30608,
+  stdout: null,
+  stderr: null
+}
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_frontend_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_backend_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_db_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_frontend_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_backend_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_db_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+time="2026-05-01T10:26:29+05:00" level=warning msg="C:\\opt\\qrhujjat\\companies\\lebl\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/json?all=1&filters=%7B%22label%22%3A%7B%22com.docker.compose.oneoff%3DFalse%22%3Atrue%2C%22com.docker.compose.project%3Dlebl%22%3Atrue%7D%7D": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+[Provisioning] lebl ishga tushirishda xato: Error: Command failed: docker-compose -f C:\opt\qrhujjat\companies\lebl\docker-compose.yml start
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at startCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:187:13)
+    at activateCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:300:25) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 34316,
+  stdout: null,
+  stderr: null
+}
+[Companies] Docker start xatosi (lebl): Error: Command failed: docker-compose -f C:\opt\qrhujjat\companies\lebl\docker-compose.yml start
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at startCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:187:13)
+    at activateCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:300:25) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 34316,
+  stdout: null,
+  stderr: null
+}
+time="2026-05-01T10:26:50+05:00" level=warning msg="C:\\opt\\qrhujjat\\companies\\lebl\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/json?all=1&filters=%7B%22label%22%3A%7B%22com.docker.compose.config-hash%22%3Atrue%2C%22com.docker.compose.oneoff%3DFalse%22%3Atrue%2C%22com.docker.compose.project%3Dlebl%22%3Atrue%7D%7D": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+[Provisioning] lebl to'xtatishda xato: Error: Command failed: docker-compose -f C:\opt\qrhujjat\companies\lebl\docker-compose.yml stop
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at stopCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:173:13)
+    at suspendCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:270:24) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 23616,
+  stdout: null,
+  stderr: null
+}
+[Companies] Docker stop xatosi (lebl): Error: Command failed: docker-compose -f C:\opt\qrhujjat\companies\lebl\docker-compose.yml stop
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at stopCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:173:13)
+    at suspendCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:270:24) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 23616,
+  stdout: null,
+  stderr: null
+}
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_frontend_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_backend_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_db_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_frontend_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_backend_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_db_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_frontend_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_backend_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_db_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+time="2026-05-01T10:49:14+05:00" level=warning msg="C:\\opt\\qrhujjat\\companies\\lebl\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/json?all=1&filters=%7B%22label%22%3A%7B%22com.docker.compose.oneoff%3DFalse%22%3Atrue%2C%22com.docker.compose.project%3Dlebl%22%3Atrue%7D%7D": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+[Provisioning] lebl ishga tushirishda xato: Error: Command failed: docker-compose -f C:\opt\qrhujjat\companies\lebl\docker-compose.yml start
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at startCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:187:13)
+    at activateCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:300:25) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 37728,
+  stdout: null,
+  stderr: null
+}
+[Companies] Docker start xatosi (lebl): Error: Command failed: docker-compose -f C:\opt\qrhujjat\companies\lebl\docker-compose.yml start
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at startCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:187:13)
+    at activateCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:300:25) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 37728,
+  stdout: null,
+  stderr: null
+}
+[Provisioning] Nginx config yozishda xato (root kerak bo'lishi mumkin): Error: ENOENT: no such file or directory, open 'D:\etc\nginx\sites-available\testkorxona2'
+    at Object.writeFileSync (node:fs:2412:20)
+    at provisionCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:119:10)
+    at createCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:190:21) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\etc\\nginx\\sites-available\\testkorxona2'
+}
+time="2026-05-01T10:53:39+05:00" level=warning msg="C:\\opt\\qrhujjat\\companies\\testkorxona2\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+unable to get image 'postgres:16-alpine': error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/images/postgres:16-alpine/json": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+[Provisioning] testkorxona2 uchun xato: Error: Command failed: docker-compose -f C:\opt\qrhujjat\companies\testkorxona2\docker-compose.yml up -d
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at provisionCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:129:13)
+    at createCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:190:21) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 37860,
+  stdout: null,
+  stderr: null
+}
+[Companies] Provisioning xatosi (testkorxona2): Error: Command failed: docker-compose -f C:\opt\qrhujjat\companies\testkorxona2\docker-compose.yml up -d
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at provisionCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:129:13)
+    at createCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:190:21) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 37860,
+  stdout: null,
+  stderr: null
+}
+[INFO] 22:10:25 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\controllers\auth.controller.ts has been modified
+Management API running on port 7000
+[INFO] 22:10:32 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\controllers\auth.controller.ts has been modified
+Management API running on port 7000
+[INFO] 22:10:46 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\controllers\auth.controller.ts has been modified
+Management API running on port 7000
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_frontend_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_backend_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/lebl_db_1/stats?stream=0": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+time="2026-05-01T22:13:25+05:00" level=warning msg="C:\\opt\\qrhujjat\\companies\\testkorxona2\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/containers/json?all=1&filters=%7B%22label%22%3A%7B%22com.docker.compose.config-hash%22%3Atrue%2C%22com.docker.compose.oneoff%3DFalse%22%3Atrue%2C%22com.docker.compose.project%3Dtestkorxona2%22%3Atrue%7D%7D": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+[Provisioning] testkorxona2 o'chirishda xato: Error: Command failed: docker-compose -f C:\opt\qrhujjat\companies\testkorxona2\docker-compose.yml down -v
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at removeCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:205:15)
+    at deleteCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:328:26) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 19040,
+  stdout: null,
+  stderr: null
+}
+[Companies] Docker remove xatosi (testkorxona2): Error: Command failed: docker-compose -f C:\opt\qrhujjat\companies\testkorxona2\docker-compose.yml down -v
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at removeCompany (D:\qr-hujjat-tizimi\Management\backend\src\services\provisioning.service.ts:205:15)
+    at deleteCompany (D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts:328:26) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 19040,
+  stdout: null,
+  stderr: null
+}
+[INFO] 22:17:25 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\controllers\auth.controller.ts has been modified
+Management API running on port 7000
+[INFO] 22:17:27 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts has been modified
+Management API running on port 7000
+[INFO] 22:17:34 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\controllers\monitoring.controller.ts has been modified
+Management API running on port 7000
+[INFO] 22:17:36 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\controllers\payments.controller.ts has been modified
+ReferenceError: PrismaClient is not defined
+    at Object.<anonymous> (D:\qr-hujjat-tizimi\Management\backend\src\controllers\payments.controller.ts:9:16)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1804:14)
+    at Module._compile (D:\qr-hujjat-tizimi\Management\backend\node_modules\source-map-support\source-map-support.js:568:25)
+    at Module.m._compile (C:\Users\user\AppData\Local\Temp\ts-node-dev-hook-4495470402169005.js:69:33)
+    at node:internal/modules/cjs/loader:1936:10
+    at require.extensions..jsx.require.extensions..js (C:\Users\user\AppData\Local\Temp\ts-node-dev-hook-4495470402169005.js:114:20)
+    at require.extensions.<computed> (C:\Users\user\AppData\Local\Temp\ts-node-dev-hook-4495470402169005.js:71:20)
+    at Object.nodeDevHook [as .ts] (D:\qr-hujjat-tizimi\Management\backend\node_modules\ts-node-dev\lib\hook.js:63:13)
+    at Module.load (node:internal/modules/cjs/loader:1525:32)
+    at Module._load (node:internal/modules/cjs/loader:1327:12)
+[ERROR] 22:17:36 ReferenceError: PrismaClient is not defined
+[INFO] 22:17:45 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\controllers\payments.controller.ts has been modified
+Management API running on port 7000
+[INFO] 22:23:14 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\controllers\payments.controller.ts has been modified
+Management API running on port 7000
+[INFO] 22:23:24 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\controllers\payments.controller.ts has been modified
+Management API running on port 7000
+[INFO] 22:23:59 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\controllers\payments.controller.ts has been modified
+Management API running on port 7000
+[INFO] 22:26:21 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\services\payment.service.ts has been modified
+Management API running on port 7000
+[INFO] 22:35:39 Restarting: D:\qr-hujjat-tizimi\Management\backend\src\controllers\companies.controller.ts has been modified
+Management API running on port 7000

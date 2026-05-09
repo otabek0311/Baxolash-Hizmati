@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  XODIM
+}
+
+enum DocumentStatus {
+  PROCESSING
+  READY
+  ARCHIVED
+  EXPIRED
+  FAILED
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  UPLOAD
+  DOWNLOAD
+  DELETE
+  ARCHIVE
+  QR_SCAN
+  USER_CREATE
+  USER_UPDATE
+  USER_DELETE
+  SETTINGS_UPDATE
+  FAILED_LOGIN
+}
+
+model User {
+  id          String    @id @default(uuid())
+  name        String
+  email       String    @unique
+  password    String
+  role        Role      @default(XODIM)
+  isActive    Boolean   @default(true)
+  lastSeenAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById String?
+  createdBy   User?     @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers User[]   @relation("UserCreatedBy")
+
+  documents    Document[]
+  auditLogs    AuditLog[]
+  chatMessages ChatMessage[]
+
+  @@index([role, isActive])
+  @@index([createdAt])
+}
+
+model Document {
+  id              String         @id @default(uuid())
+  originalName    String
+  storedName      String
+  mimeType        String
+  sizeBytes       Int
+  pageCount       Int            @default(0)
+  status          DocumentStatus @default(PROCESSING)
+  category        String?
+  processedPath   String?
+  retentionDays   Int
+  expiresAt       DateTime
+  uploadedById    String
+  uploadedBy      User           @relation(fields: [uploadedById], references: [id])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  downloadedAt    DateTime?
+  isDownloaded    Boolean        @default(false)
+
+  pages     Page[]
+  auditLogs AuditLog[]
+
+  @@index([uploadedById])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([createdAt])
+}
+
+model Page {
+  id          String   @id @default(uuid())
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  pageNumber  Int
+  qrToken     String   @unique @default(uuid())
+  filePath    String
+  createdAt   DateTime @default(now())
+
+  scans QRScan[]
+
+  @@index([documentId])
+}
+
+model QRScan {
+  id        String   @id @default(uuid())
+  pageId    String
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  ip        String
+  userAgent String?
+  scannedAt DateTime @default(now())
+
+  @@index([pageId])
+  @@index([scannedAt])
+}
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     AuditAction
+  documentId String?
+  document   Document?   @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  details    String?
+  ip         String?
+  createdAt  DateTime    @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([documentId])
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model SystemSettings {
+  id                   String   @id @default("singleton")
+  defaultRetentionDays Int      @default(30)
+  minRetentionDays     Int      @default(7)
+  maxRetentionDays     Int      @default(90)
+  maxFileSizeMb        Int      @default(50)
+  updatedAt            DateTime @updatedAt
+  updatedById          String?
+}
