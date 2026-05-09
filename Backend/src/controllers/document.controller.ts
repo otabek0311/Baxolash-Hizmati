@@ -37,7 +37,8 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
       },
     });
 
-    await prisma.auditLog.create({
+    // Audit log va processing — javob yuborishni kechiktirmaslik uchun await qilinmaydi
+    prisma.auditLog.create({
       data: {
         userId: req.user!.id,
         action: AuditAction.UPLOAD,
@@ -45,7 +46,7 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
         ip: req.ip,
         details: `Hujjat yuklandi: ${req.file.originalname}`,
       },
-    });
+    }).catch(console.error);
 
     processDocument(req.file.path, document.id).catch(console.error);
 

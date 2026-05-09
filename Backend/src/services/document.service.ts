@@ -21,7 +21,17 @@ const getLibreOfficeCmd = (): string => {
   if (process.platform === 'darwin') {
     return '/Applications/LibreOffice.app/Contents/MacOS/soffice';
   }
-  return 'libreoffice';
+  if (process.platform === 'win32') {
+    const candidates = [
+      'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
+      'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe',
+    ];
+    for (const c of candidates) {
+      if (fs.existsSync(c)) return c;
+    }
+    return 'soffice.exe';
+  }
+  return 'soffice';
 };
 
 const wordToPdf = async (inputPath: string): Promise<Buffer> => {
@@ -30,17 +40,22 @@ const wordToPdf = async (inputPath: string): Promise<Buffer> => {
   const baseName = path.basename(inputPath, path.extname(inputPath));
   const outputPath = path.join(tmpDir, `${baseName}.pdf`);
 
+  // Windows da file:// URL uchta slash talab qiladi va backslash → forward slash
+  const toFileUrl = (p: string) =>
+    process.platform === 'win32'
+      ? `file:///${p.replace(/\\/g, '/')}`
+      : `file://${p}`;
+
   try {
-    // execFileAsync — event loop ni bloklamaydi (3 ta fayl parallel ishlashi mumkin)
     await execFileAsync(getLibreOfficeCmd(), [
       '--headless',
-      `--env:UserInstallation=file://${tmpDir}`,
+      `--env:UserInstallation=${toFileUrl(tmpDir)}`,
       '--convert-to', 'pdf',
       '--outdir', tmpDir,
       inputPath,
     ], { timeout: 60000 });
     if (!fs.existsSync(outputPath)) throw new Error('Word konvertatsiya fayli yaratilmadi');
-    return fs.readFileSync(outputPath);
+    return fs.promises.readFile(outputPath);
   } finally {
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
   }
@@ -53,7 +68,7 @@ export const processDocument = async (filePath: string, documentId: string): Pro
     let pdfBuffer: Buffer;
 
     if (ext === '.pdf') {
-      pdfBuffer = fs.readFileSync(filePath);
+      pdfBuffer = await fs.promises.readFile(filePath);
     } else if (ext === '.docx' || ext === '.doc') {
       pdfBuffer = await wordToPdf(filePath);
     } else {
@@ -78,11 +93,11 @@ export const processDocument = async (filePath: string, documentId: string): Pro
       return { qrToken, qrUrl: `${BASE_URL}/api/qr/${qrToken}/view`, pageIndex: i };
     });
 
-    // 2-qadam: Barcha QR kodlarni PARALLEL generatsiya qilish (eng katta optimallashtirish)
-    // 20 sahifa: ~1000ms → ~80ms (parallel)
+    // 2-qadam: Barcha QR kodlarni PARALLEL generatsiya qilish
+    // width:60 = 42px display uchun yetarli (120px → 60px: 4x kichik buffer)
     const qrBuffers = await Promise.all(
       pageData.map(({ qrUrl }) =>
-        QRCode.toBuffer(qrUrl, { width: 120, margin: 1, errorCorrectionLevel: 'M' })
+        QRCode.toBuffer(qrUrl, { width: 60, margin: 1, errorCorrectionLevel: 'M' })
       )
     );
 
@@ -134,9 +149,10 @@ export const processDocument = async (filePath: string, documentId: string): Pro
 
     const processedFileName = `${documentId}.pdf`;
     const processedPath = path.join(PROCESSED_DIR, processedFileName);
-    fs.writeFileSync(processedPath, await pdfDoc.save({ addDefaultPage: false }));
+    // useObjectStreams:false — pdf-lib save bosqichini ~30% tezlashtiradi
+    await fs.promises.writeFile(processedPath, await pdfDoc.save({ addDefaultPage: false, useObjectStreams: false }));
 
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    if (fs.existsSync(filePath)) await fs.promises.unlink(filePath).catch(() => {});
 
     await prisma.page.createMany({
       data: pageData.map(({ qrToken }, i) => ({
@@ -164,7 +180,7 @@ export const processDocument = async (filePath: string, documentId: string): Pro
 
 export const addWatermark = async (processedPath: string, downloaderName: string, downloadedAt: Date): Promise<Buffer> => {
   const filePath = path.join(PROCESSED_DIR, processedPath);
-  const pdfDoc = await PDFDocument.load(fs.readFileSync(filePath));
+  const pdfDoc = await PDFDocument.load(await fs.promises.readFile(filePath));
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const text = `Yuklab olindi: ${downloaderName} | ${downloadedAt.toLocaleString('uz-UZ')}`;
 
