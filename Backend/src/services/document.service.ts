@@ -42,20 +42,13 @@ const wordToPdf = async (inputPath: string): Promise<Buffer> => {
   const baseName = path.basename(inputPath, path.extname(inputPath));
   const outputPath = path.join(tmpDir, `${baseName}.pdf`);
 
-  // Windows da file:// URL uchta slash talab qiladi va backslash → forward slash
-  const toFileUrl = (p: string) =>
-    process.platform === 'win32'
-      ? `file:///${p.replace(/\\/g, '/')}`
-      : `file://${p}`;
-
   try {
-    await execFileAsync(getLibreOfficeCmd(), [
-      '--headless',
-      `--env:UserInstallation=${toFileUrl(tmpDir)}`,
-      '--convert-to', 'pdf',
-      '--outdir', tmpDir,
-      inputPath,
-    ], { timeout: 60000 });
+    // Windows da --env:UserInstallation flagi LibreOffice 26.x da ishlamaydi (exit 1)
+    const args = process.platform === 'win32'
+      ? ['--headless', '--norestore', '--nofirststartwizard', '--convert-to', 'pdf', '--outdir', tmpDir, inputPath]
+      : ['--headless', `--env:UserInstallation=file://${tmpDir}`, '--convert-to', 'pdf', '--outdir', tmpDir, inputPath];
+
+    await execFileAsync(getLibreOfficeCmd(), args, { timeout: 60000 });
     if (!fs.existsSync(outputPath)) throw new Error('Word konvertatsiya fayli yaratilmadi');
     return fs.promises.readFile(outputPath);
   } finally {
