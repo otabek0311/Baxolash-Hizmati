@@ -17,8 +17,11 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScanSuccess, onClose }) 
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   const validateInput = (value: string) => {
-    if (value && !/^[a-zA-Z0-9]*$/.test(value)) {
-      setValidationError("Faqat harf va raqamlardan foydalaning");
+    // UUID token (tire bilan) yoki to'liq URL qabul qilinadi
+    const isToken = /^[a-zA-Z0-9-]+$/.test(value);
+    const isUrl = value.startsWith('http');
+    if (value && !isToken && !isUrl) {
+      setValidationError("To'g'ri QR token yoki URL kiriting");
     } else {
       setValidationError(null);
     }

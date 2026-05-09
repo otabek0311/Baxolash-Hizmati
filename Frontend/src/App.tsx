@@ -143,7 +143,10 @@ const AppLayout = () => {
       setQrResult(result);
       setIsScannerOpen(false);
     } catch (err: any) {
-      alert(err.message || 'QR kod yaroqsiz');
+      const msg = err.message === 'Failed to fetch'
+        ? 'Server bilan aloqa yo\'q. Backend ishlaayotganini tekshiring.'
+        : err.message || 'QR kod yaroqsiz';
+      alert(msg);
       setIsScannerOpen(false);
     }
   };

@@ -28,7 +28,8 @@ app.set('trust proxy', 1);
 app.use(helmet());
 
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3010').split(',').map(s => s.trim());
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+const isDev = process.env.NODE_ENV !== 'production';
+app.use(cors({ origin: isDev ? true : allowedOrigins, credentials: true }));
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
