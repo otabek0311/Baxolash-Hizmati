@@ -19,7 +19,9 @@ fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const getLibreOfficeCmd = (): string => {
   if (process.platform === 'darwin') {
-    return '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+    const p = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+    if (fs.existsSync(p)) return p;
+    throw new Error('LibreOffice topilmadi. O\'rnatish: https://www.libreoffice.org/download/');
   }
   if (process.platform === 'win32') {
     const candidates = [
@@ -29,7 +31,7 @@ const getLibreOfficeCmd = (): string => {
     for (const c of candidates) {
       if (fs.existsSync(c)) return c;
     }
-    return 'soffice.exe';
+    throw new Error('LibreOffice topilmadi. O\'rnatish: https://www.libreoffice.org/download/');
   }
   return 'soffice';
 };
