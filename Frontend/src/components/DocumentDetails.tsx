@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FileText, Info, History, Download, Clock, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import * as pdfjsLib from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { api } from '../services/api';
 import { useLang } from '../context/LanguageContext';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 interface DocumentDetailsProps {
   documentId: string;
