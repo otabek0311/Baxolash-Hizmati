@@ -43,7 +43,7 @@ export const RecentFiles = () => {
   const fetchDocuments = () => {
     setLoading(true);
     api.getDocuments()
-      .then(data => setFiles(data.slice(0, 10)))
+      .then(data => setFiles((data.documents || data).slice(0, 10)))
       .catch(console.error)
       .finally(() => setLoading(false));
   };
