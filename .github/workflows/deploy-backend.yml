@@ -35,4 +35,8 @@ jobs:
             pm2 restart qr-backend || pm2 start dist/app.js --name qr-backend
             pm2 save
 
+            echo "Health check..."
+            sleep 3
+            curl -sf http://localhost:5000/health || { echo "XATO: Backend ishga tushmadi!"; pm2 logs qr-backend --lines 20; exit 1; }
+
             echo "Backend deploy muvaffaqiyatli!"

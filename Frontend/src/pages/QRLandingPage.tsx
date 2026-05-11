@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { FileText, User, Calendar, Hash, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 
-const BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL ??
+  (import.meta.env.PROD ? '/api' : `http://${window.location.hostname}:5000/api`);
 const API_BASE = BASE_URL.replace('/api', '');
 
 interface QRResult {
