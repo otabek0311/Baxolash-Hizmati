@@ -210,10 +210,19 @@ export const convertPdfToDocx = async (processedPath: string): Promise<Buffer> =
     await execFileAsync(
       getLibreOfficeCmd(),
       ['--headless', '--norestore', '--nofirststartwizard',
-       '--infilter', 'writer_pdf_import',
+       '--infilter=writer_pdf_import',
        '--convert-to', 'docx', '--outdir', tmpDir, pdfPath],
       { timeout: 60000 }
     );
+    if (!fs.existsSync(docxPath)) {
+      // Fallback: writer_pdf_import filtrini qo'llab-quvvatlamasa, filtersiz qayta sinab ko'r
+      await execFileAsync(
+        getLibreOfficeCmd(),
+        ['--headless', '--norestore', '--nofirststartwizard',
+         '--convert-to', 'docx', '--outdir', tmpDir, pdfPath],
+        { timeout: 60000 }
+      );
+    }
     if (!fs.existsSync(docxPath)) throw new Error('Word fayl yaratilmadi');
     return await fs.promises.readFile(docxPath);
   } finally {

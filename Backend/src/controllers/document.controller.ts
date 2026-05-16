@@ -139,11 +139,18 @@ export const downloadDocument = async (req: AuthRequest, res: Response): Promise
 
     const format = (req.query.format as string) === 'docx' ? 'docx' : 'pdf';
 
-    const fileBuffer = format === 'docx'
-      ? await convertPdfToDocx(document.processedPath)
-      : await fs.promises.readFile(
-          path.join(path.join(__dirname, '..', '..', 'processed'), document.processedPath)
-        );
+    let fileBuffer: Buffer;
+    try {
+      fileBuffer = format === 'docx'
+        ? await convertPdfToDocx(document.processedPath)
+        : await fs.promises.readFile(
+            path.join(path.join(__dirname, '..', '..', 'processed'), document.processedPath)
+          );
+    } catch (convErr: any) {
+      console.error('[Download] Konvertatsiya xatosi:', convErr?.message || convErr);
+      res.status(500).json({ message: convErr?.message || 'Konvertatsiya xatosi' });
+      return;
+    }
 
     await prisma.document.update({
       where: { id: document.id },
@@ -171,7 +178,8 @@ export const downloadDocument = async (req: AuthRequest, res: Response): Promise
       res.setHeader('Content-Disposition', `attachment; filename="${pdfName.replace(/[^\x00-\x7F]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(pdfName)}`);
     }
     res.send(fileBuffer);
-  } catch {
+  } catch (err: any) {
+    console.error('[Download] Xato:', err?.message || err);
     res.status(500).json({ message: 'Server xatosi' });
   }
 };

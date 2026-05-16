@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLang } from '../context/LanguageContext';
 import type { Lang } from '../context/LanguageContext';
 import {
-  Loader2, Save, FileText, Download, Trash2,
+  Loader2, Save, FileText, Download, FileDown, Trash2,
   CheckCircle, Clock, AlertCircle, Archive as ArchiveIcon, X, Filter,
   Sun, Moon,
 } from 'lucide-react';
@@ -55,6 +55,8 @@ export const Documents = () => {
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; fileId: string | null; fileName: string }>({
     isOpen: false, fileId: null, fileName: '',
   });
+  const [dlLoading, setDlLoading] = useState<{ [id: string]: 'pdf' | 'docx' | null }>({});
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const STATUS_OPTS = [
     { value: '',          label: t('common.all'),         icon: Filter        },
@@ -92,9 +94,16 @@ export const Documents = () => {
 
   const hasFilter = statusFilter || dateFilter;
 
-  const handleDownload = async (file: any) => {
-    try { await api.downloadDocument(file.id, file.originalName); }
-    catch (err: any) { alert(err.message); }
+  const handleDownload = async (file: any, format: 'pdf' | 'docx') => {
+    if (dlLoading[file.id]) return;
+    setDlLoading(prev => ({ ...prev, [file.id]: format }));
+    try {
+      await api.downloadDocument(file.id, file.originalName, format);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Yuklab olishda xato');
+    } finally {
+      setDlLoading(prev => ({ ...prev, [file.id]: null }));
+    }
   };
 
   const confirmDelete = async () => {
@@ -102,7 +111,9 @@ export const Documents = () => {
     try {
       await api.deleteDocument(deleteModal.fileId);
       setFiles(prev => prev.filter(f => f.id !== deleteModal.fileId));
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      setErrorMsg(err.message || "O'chirishda xato");
+    }
   };
 
   return (
@@ -175,6 +186,13 @@ export const Documents = () => {
       </div>
 
       {/* Table */}
+      {errorMsg && (
+        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center justify-between gap-3">
+          <p className="text-xs font-bold text-red-600 dark:text-red-400">{errorMsg}</p>
+          <button onClick={() => setErrorMsg(null)} className="text-red-400 hover:text-red-600 font-black text-lg leading-none flex-shrink-0">×</button>
+        </div>
+      )}
+
       <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -230,13 +248,24 @@ export const Documents = () => {
                     <td className="px-4 sm:px-6 py-3 sm:py-4 text-right">
                       <div className="flex items-center justify-end gap-1 sm:gap-2">
                         {file.status === 'READY' && (
-                          <button
-                            onClick={() => handleDownload(file)}
-                            className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
-                            title={t('common.download')}
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleDownload(file, 'pdf')}
+                              disabled={!!dlLoading[file.id]}
+                              className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all disabled:opacity-50"
+                              title="PDF yuklab olish"
+                            >
+                              {dlLoading[file.id] === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                            </button>
+                            <button
+                              onClick={() => handleDownload(file, 'docx')}
+                              disabled={!!dlLoading[file.id]}
+                              className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-all disabled:opacity-50"
+                              title="Word yuklab olish"
+                            >
+                              {dlLoading[file.id] === 'docx' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                            </button>
+                          </>
                         )}
                         <button
                           onClick={() => setDeleteModal({ isOpen: true, fileId: file.id, fileName: file.originalName })}
