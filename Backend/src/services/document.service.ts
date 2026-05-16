@@ -85,7 +85,7 @@ export const processDocument = async (filePath: string, documentId: string): Pro
     }
 
     const QR_SIZE = 46;
-    const QR_X    = 28;
+    const QR_X    = 110;
     const QR_Y    = 8;
 
     // 1-qadam: Barcha sahifalar uchun token va URL larni oldindan hosil qilish
