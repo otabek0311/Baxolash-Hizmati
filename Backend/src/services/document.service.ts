@@ -47,7 +47,7 @@ const wordToPdf = async (inputPath: string): Promise<Buffer> => {
 
     await execFileAsync(getLibreOfficeCmd(), args, { timeout: 60000 });
     if (!fs.existsSync(outputPath)) throw new Error('Word konvertatsiya fayli yaratilmadi');
-    return fs.promises.readFile(outputPath);
+    return await fs.promises.readFile(outputPath);
   } finally {
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
   }
