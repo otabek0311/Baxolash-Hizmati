@@ -1,4 +1,4 @@
-import { PDFDocument, PDFPage, PDFName, PDFArray, PDFRawStream, rgb, StandardFonts, ParseSpeeds } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, ParseSpeeds } from 'pdf-lib';
 import QRCode from 'qrcode';
 import fs from 'fs';
 import os from 'os';
@@ -63,31 +63,6 @@ const wordToPdf = async (inputPath: string): Promise<Buffer> => {
   }
 };
 
-// Mavjud sahifa kontentini yuqoriga siqadi — pastda footerH px bo'sh joy qoladi.
-// Sahifa o'lchami o'zgarmaydi, shuning uchun sahifalar orasida reflow bo'lmaydi.
-function compressPageContent(pdfDoc: PDFDocument, page: PDFPage, footerH: number): void {
-  const { height } = page.getSize();
-  const { context } = pdfDoc;
-
-  const contents = page.node.get(PDFName.of('Contents'));
-  if (!contents) return;
-
-  // scaleY: kontent (height-footerH)/height ga siqiladi (masalan 790/842 ≈ 0.938)
-  // ty = footerH: kontent yuqoriga siljiydi, pastda footerH px bo'sh qoladi
-  const scaleY = (height - footerH) / height;
-  const startBytes = new Uint8Array(Buffer.from(`q\n1 0 0 ${scaleY.toFixed(8)} 0 ${footerH} cm\n`));
-  const endBytes   = new Uint8Array(Buffer.from(`\nQ\n`));
-
-  const startRef = context.register(
-    PDFRawStream.of(context.obj({ Length: startBytes.length }), startBytes)
-  );
-  const endRef = context.register(
-    PDFRawStream.of(context.obj({ Length: endBytes.length }), endBytes)
-  );
-
-  const existingRefs = contents instanceof PDFArray ? contents.asArray() : [contents];
-  page.node.set(PDFName.of('Contents'), context.obj([startRef, ...existingRefs, endRef]));
-}
 
 export const processDocument = async (filePath: string, documentId: string): Promise<void> => {
   const t0 = Date.now();
@@ -136,30 +111,30 @@ export const processDocument = async (filePath: string, documentId: string): Pro
     }
 
     // 4-qadam: Har bir sahifaga footer va QR chizish
-    // Kontent FOOTER_H ga siqiladi (cm transform), sahifa o'lchami o'zgarmaydi.
-    // Shunday qilib, 1-betdagi ma'lumotlar 2-betga "siqib chiqarilmaydi".
+    // Kontentga UMUMAN TEGMAYMIZ — sahifani pastdan FOOTER_H ga kengaytiramiz.
+    // MediaBox: [0, -FOOTER_H, width, height] — original kontent o'z joyida qoladi.
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
-      const { width } = page.getSize();
+      const { width, height } = page.getSize();
 
-      // Mavjud kontentni yuqoriga siqish — pastda FOOTER_H px joy qoladi
-      compressPageContent(pdfDoc, page, FOOTER_H);
+      // Sahifani pastdan FOOTER_H ga kengaytirish (kontent siljimaydi, reflow yo'q)
+      page.setMediaBox(0, -FOOTER_H, width, height + FOOTER_H);
 
-      // Footer pastki qismida (y=0..FOOTER_H), original koordinatalarda chiziladi
+      // Footer yangi kengaytirilgan qismda (y = -FOOTER_H .. 0)
       page.drawRectangle({
-        x: 0, y: 0,
+        x: 0, y: -FOOTER_H,
         width, height: FOOTER_H,
         color: rgb(0.98, 0.98, 0.98),
       });
 
       page.drawLine({
-        start: { x: 0, y: FOOTER_H },
-        end:   { x: width, y: FOOTER_H },
+        start: { x: 0, y: 0 },
+        end:   { x: width, y: 0 },
         thickness: 0.5,
         color: rgb(0.8, 0.8, 0.8),
       });
 
-      const footerMidY = FOOTER_H / 2 - 4;
+      const footerMidY = -FOOTER_H / 2 - 4;
 
       page.drawText(`${i + 1} / ${pages.length}`, {
         x: MARGIN + 4, y: footerMidY,
@@ -173,7 +148,7 @@ export const processDocument = async (filePath: string, documentId: string): Pro
 
       page.drawImage(qrImages[i], {
         x: width - QR_SIZE - MARGIN,
-        y: (FOOTER_H - QR_SIZE) / 2,
+        y: -(FOOTER_H + QR_SIZE) / 2,
         width: QR_SIZE, height: QR_SIZE,
       });
     }
