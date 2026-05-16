@@ -120,9 +120,11 @@ export const processDocument = async (filePath: string, documentId: string): Pro
         width: QR_SIZE, height: QR_SIZE,
       });
 
+      // "qrhujjat.uz" — QR ning o'ng tomonida, vertikal markazda
       page.drawText('qrhujjat.uz', {
-        x: QR_X, y: QR_Y - 9,
-        size: 6, font, color: rgb(0.5, 0.5, 0.5),
+        x: QR_X + QR_SIZE + 8,
+        y: QR_Y + QR_SIZE / 2 - 4,
+        size: 9, font, color: rgb(0.35, 0.35, 0.35),
       });
     }
 
