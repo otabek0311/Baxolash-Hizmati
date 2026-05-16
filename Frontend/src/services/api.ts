@@ -75,11 +75,11 @@ export const api = {
     const blob = await res.blob();
     return URL.createObjectURL(blob);
   },
-  downloadDocument: async (id: string, filename: string) => {
+  downloadDocument: async (id: string, filename: string, format: 'pdf' | 'xlsx' = 'pdf') => {
     const token = getToken();
     const dlHeaders: Record<string, string> = {};
     if (token) dlHeaders['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(`${BASE_URL}/documents/${id}/download`, {
+    const res = await fetch(`${BASE_URL}/documents/${id}/download?format=${format}`, {
       headers: dlHeaders,
     });
     if (res.status === 401) { unauthorizedHandler?.(); throw new Error('Sessiya tugadi'); }
@@ -91,7 +91,8 @@ export const api = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename.replace(/\.(doc|docx|pdf)$/i, '') + '.pdf';
+    const ext = format === 'xlsx' ? '.xlsx' : '.pdf';
+    a.download = filename.replace(/\.(doc|docx|pdf|xlsx|xls)$/i, '') + ext;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

@@ -4,7 +4,7 @@ import fs from 'fs';
 import { AuditAction } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../utils/prisma';
-import { processDocument, addWatermark } from '../services/document.service';
+import { processDocument, convertPdfToXlsx } from '../services/document.service';
 
 const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads');
 
@@ -137,11 +137,19 @@ export const downloadDocument = async (req: AuthRequest, res: Response): Promise
       return;
     }
 
-    const watermarked = await addWatermark(
-      document.processedPath,
-      req.user!.name,
-      new Date()
-    );
+    const format = (req.query.format as string) === 'xlsx' ? 'xlsx' : 'pdf';
+    const isExcelSource = /\.(xlsx|xls)$/i.test(document.originalName);
+
+    if (format === 'xlsx' && !isExcelSource) {
+      res.status(400).json({ message: 'Bu hujjat uchun Excel format mavjud emas' });
+      return;
+    }
+
+    const fileBuffer = format === 'xlsx'
+      ? await convertPdfToXlsx(document.processedPath)
+      : await fs.promises.readFile(
+          path.join(path.join(__dirname, '..', '..', 'processed'), document.processedPath)
+        );
 
     await prisma.document.update({
       where: { id: document.id },
@@ -154,15 +162,21 @@ export const downloadDocument = async (req: AuthRequest, res: Response): Promise
         action: AuditAction.DOWNLOAD,
         documentId: document.id,
         ip: req.ip,
-        details: `Hujjat yuklab olindi: ${document.originalName}`,
+        details: `Hujjat yuklab olindi (${format.toUpperCase()}): ${document.originalName}`,
       },
     });
 
-    const pdfName = document.originalName.replace(/\.(doc|docx|pdf)$/i, '') + '.pdf';
-    const safeName = encodeURIComponent(pdfName);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${pdfName.replace(/[^\x00-\x7F]/g, '_')}"; filename*=UTF-8''${safeName}`);
-    res.send(watermarked);
+    const baseName = document.originalName.replace(/\.(doc|docx|pdf|xlsx|xls)$/i, '');
+    if (format === 'xlsx') {
+      const xlsxName = baseName + '.xlsx';
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${xlsxName.replace(/[^\x00-\x7F]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(xlsxName)}`);
+    } else {
+      const pdfName = baseName + '.pdf';
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${pdfName.replace(/[^\x00-\x7F]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(pdfName)}`);
+    }
+    res.send(fileBuffer);
   } catch {
     res.status(500).json({ message: 'Server xatosi' });
   }

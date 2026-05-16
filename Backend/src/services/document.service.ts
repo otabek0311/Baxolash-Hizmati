@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, degrees, StandardFonts, ParseSpeeds } from 'pdf-lib';
+import { PDFDocument, PDFPage, PDFName, PDFArray, PDFRawStream, rgb, StandardFonts, ParseSpeeds } from 'pdf-lib';
 import QRCode from 'qrcode';
 import fs from 'fs';
 import os from 'os';
@@ -53,6 +53,32 @@ const wordToPdf = async (inputPath: string): Promise<Buffer> => {
   }
 };
 
+// Mavjud sahifa kontentini yuqoriga siqadi — pastda footerH px bo'sh joy qoladi.
+// Sahifa o'lchami o'zgarmaydi, shuning uchun sahifalar orasida reflow bo'lmaydi.
+function compressPageContent(pdfDoc: PDFDocument, page: PDFPage, footerH: number): void {
+  const { height } = page.getSize();
+  const { context } = pdfDoc;
+
+  const contents = page.node.get(PDFName.of('Contents'));
+  if (!contents) return;
+
+  // scaleY: kontent (height-footerH)/height ga siqiladi (masalan 790/842 ≈ 0.938)
+  // ty = footerH: kontent yuqoriga siljiydi, pastda footerH px bo'sh qoladi
+  const scaleY = (height - footerH) / height;
+  const startBytes = new Uint8Array(Buffer.from(`q\n1 0 0 ${scaleY.toFixed(8)} 0 ${footerH} cm\n`));
+  const endBytes   = new Uint8Array(Buffer.from(`\nQ\n`));
+
+  const startRef = context.register(
+    PDFRawStream.of(context.obj({ Length: startBytes.length }), startBytes)
+  );
+  const endRef = context.register(
+    PDFRawStream.of(context.obj({ Length: endBytes.length }), endBytes)
+  );
+
+  const existingRefs = contents instanceof PDFArray ? contents.asArray() : [contents];
+  page.node.set(PDFName.of('Contents'), context.obj([startRef, ...existingRefs, endRef]));
+}
+
 export const processDocument = async (filePath: string, documentId: string): Promise<void> => {
   const t0 = Date.now();
   try {
@@ -100,41 +126,44 @@ export const processDocument = async (filePath: string, documentId: string): Pro
     }
 
     // 4-qadam: Har bir sahifaga footer va QR chizish
+    // Kontent FOOTER_H ga siqiladi (cm transform), sahifa o'lchami o'zgarmaydi.
+    // Shunday qilib, 1-betdagi ma'lumotlar 2-betga "siqib chiqarilmaydi".
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
       const { width } = page.getSize();
-      const mb = page.getMediaBox();
 
-      page.setMediaBox(mb.x, mb.y - FOOTER_H, mb.width, mb.height + FOOTER_H);
+      // Mavjud kontentni yuqoriga siqish — pastda FOOTER_H px joy qoladi
+      compressPageContent(pdfDoc, page, FOOTER_H);
 
+      // Footer pastki qismida (y=0..FOOTER_H), original koordinatalarda chiziladi
       page.drawRectangle({
-        x: mb.x, y: mb.y - FOOTER_H,
+        x: 0, y: 0,
         width, height: FOOTER_H,
         color: rgb(0.98, 0.98, 0.98),
       });
 
       page.drawLine({
-        start: { x: mb.x, y: mb.y },
-        end:   { x: mb.x + width, y: mb.y },
+        start: { x: 0, y: FOOTER_H },
+        end:   { x: width, y: FOOTER_H },
         thickness: 0.5,
         color: rgb(0.8, 0.8, 0.8),
       });
 
-      const footerMidY = mb.y - FOOTER_H / 2 - 4;
+      const footerMidY = FOOTER_H / 2 - 4;
 
       page.drawText(`${i + 1} / ${pages.length}`, {
-        x: mb.x + MARGIN + 4, y: footerMidY,
+        x: MARGIN + 4, y: footerMidY,
         size: 8, font, color: rgb(0.5, 0.5, 0.5),
       });
 
       page.drawText('qrhujjat.uz', {
-        x: mb.x + width / 2 - 24, y: footerMidY,
+        x: width / 2 - 24, y: footerMidY,
         size: 7, font, color: rgb(0.6, 0.6, 0.6),
       });
 
       page.drawImage(qrImages[i], {
-        x: mb.x + width - QR_SIZE - MARGIN,
-        y: mb.y - FOOTER_H + (FOOTER_H - QR_SIZE) / 2,
+        x: width - QR_SIZE - MARGIN,
+        y: (FOOTER_H - QR_SIZE) / 2,
         width: QR_SIZE, height: QR_SIZE,
       });
     }
@@ -170,20 +199,22 @@ export const processDocument = async (filePath: string, documentId: string): Pro
   }
 };
 
-export const addWatermark = async (processedPath: string, downloaderName: string, downloadedAt: Date): Promise<Buffer> => {
-  const filePath = path.join(PROCESSED_DIR, processedPath);
-  const pdfDoc = await PDFDocument.load(await fs.promises.readFile(filePath));
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const text = `Yuklab olindi: ${downloaderName} | ${downloadedAt.toLocaleString('uz-UZ')}`;
+export const convertPdfToXlsx = async (processedPath: string): Promise<Buffer> => {
+  const pdfPath = path.join(PROCESSED_DIR, processedPath);
+  const tmpDir = path.join(os.tmpdir(), `xlsx-${uuidv4()}`);
+  fs.mkdirSync(tmpDir, { recursive: true });
+  const baseName = path.basename(processedPath, '.pdf');
+  const xlsxPath = path.join(tmpDir, `${baseName}.xlsx`);
 
-  for (const page of pdfDoc.getPages()) {
-    const { height } = page.getSize();
-    page.drawText(text, {
-      x: 30, y: height / 2, size: 9, font,
-      color: rgb(0.75, 0.75, 0.75),
-      rotate: degrees(45), opacity: 0.3,
-    });
+  try {
+    await execFileAsync(
+      getLibreOfficeCmd(),
+      ['--headless', '--norestore', '--nofirststartwizard', '--convert-to', 'xlsx', '--outdir', tmpDir, pdfPath],
+      { timeout: 60000 }
+    );
+    if (!fs.existsSync(xlsxPath)) throw new Error('Excel fayl yaratilmadi');
+    return fs.promises.readFile(xlsxPath);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   }
-
-  return Buffer.from(await pdfDoc.save());
 };

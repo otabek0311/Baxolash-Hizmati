@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Info, History, Download, Clock, Loader2 } from 'lucide-react';
+import { FileText, Info, History, Download, Clock, Loader2, Sheet } from 'lucide-react';
 import { motion } from 'motion/react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { api } from '../services/api';
@@ -92,17 +92,19 @@ export const DocumentDetails: React.FC<DocumentDetailsProps> = ({ documentId }) 
     };
   }, [activeTab, documentId]);
 
-  const handleDownload = async () => {
+  const handleDownload = async (format: 'pdf' | 'xlsx' = 'pdf') => {
     if (!doc) return;
     setDownloading(true);
     try {
-      await api.downloadDocument(doc.id, doc.originalName);
+      await api.downloadDocument(doc.id, doc.originalName, format);
     } catch (err: any) {
       alert(err.message);
     } finally {
       setDownloading(false);
     }
   };
+
+  const isExcel = (name: string) => /\.(xlsx|xls)$/i.test(name);
 
   const tabs = [
     { id: 'pages',   label: t('doc.tabPages'),   icon: FileText },
@@ -134,14 +136,26 @@ export const DocumentDetails: React.FC<DocumentDetailsProps> = ({ documentId }) 
             {doc.originalName} • {sizeKb < 1024 ? `${sizeKb} KB` : `${sizeMb} MB`} • {doc.pageCount} {t('common.pages')}
           </p>
         </div>
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className="px-6 py-3 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center gap-2 active:scale-95 disabled:opacity-60"
-        >
-          {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-          {t('common.download')} PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleDownload('pdf')}
+            disabled={downloading}
+            className="px-5 py-3 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center gap-2 active:scale-95 disabled:opacity-60"
+          >
+            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            PDF
+          </button>
+          {isExcel(doc.originalName) && (
+            <button
+              onClick={() => handleDownload('xlsx')}
+              disabled={downloading}
+              className="px-5 py-3 bg-green-600 text-white text-xs font-bold rounded-xl hover:bg-green-700 transition-all shadow-lg shadow-green-100 flex items-center gap-2 active:scale-95 disabled:opacity-60"
+            >
+              {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sheet className="w-4 h-4" />}
+              Excel
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="px-8 pt-6 border-b border-gray-100 dark:border-gray-700">

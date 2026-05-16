@@ -76,7 +76,7 @@ cp .env.example .env
 # .env da avtomatik to'ldirish
 sed -i "s|DATABASE_URL=.*|DATABASE_URL=\"postgresql://postgres:$DB_PASS@localhost:5432/qrhujjat\"|" .env
 sed -i "s|NODE_ENV=.*|NODE_ENV=\"production\"|" .env
-sed -i "s|BASE_URL=.*|BASE_URL=\"http://$SERVER_IP:5000\"|" .env
+sed -i "s|BASE_URL=.*|BASE_URL=\"http://$SERVER_IP\"|" .env
 sed -i "s|CORS_ORIGIN=.*|CORS_ORIGIN=\"http://$SERVER_IP\"|" .env
 
 echo ""

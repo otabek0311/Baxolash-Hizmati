@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Smartphone, ExternalLink, FileText, Trash2, Download, Loader2 } from 'lucide-react';
+import { Smartphone, ExternalLink, FileText, Trash2, Download, Loader2, Sheet } from 'lucide-react';
 import { ConfirmationModal } from './ConfirmationModal';
 import { api } from '../services/api';
 import { useLang } from '../context/LanguageContext';
@@ -60,13 +60,15 @@ export const RecentFiles = () => {
     }
   };
 
-  const handleDownload = async (file: any) => {
+  const handleDownload = async (file: any, format: 'pdf' | 'xlsx' = 'pdf') => {
     try {
-      await api.downloadDocument(file.id, file.originalName);
+      await api.downloadDocument(file.id, file.originalName, format);
     } catch (err: any) {
       alert(err.message);
     }
   };
+
+  const isExcel = (name: string) => /\.(xlsx|xls)$/i.test(name);
 
   const statusLabel: Record<string, string> = {
     PROCESSING: t('status.processing'),
@@ -135,13 +137,24 @@ export const RecentFiles = () => {
                   <td className="px-4 sm:px-6 py-3 sm:py-4 text-right">
                     <div className="flex items-center justify-end gap-1 sm:gap-2">
                       {file.status === 'READY' && (
-                        <button
-                          onClick={() => handleDownload(file)}
-                          className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
-                          title={t('common.download')}
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleDownload(file, 'pdf')}
+                            className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
+                            title="PDF yuklab olish"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                          {isExcel(file.originalName) && (
+                            <button
+                              onClick={() => handleDownload(file, 'xlsx')}
+                              className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-all"
+                              title="Excel yuklab olish"
+                            >
+                              <Sheet className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </>
                       )}
                       <button
                         onClick={() => setDeleteModal({ isOpen: true, fileId: file.id, fileName: file.originalName })}

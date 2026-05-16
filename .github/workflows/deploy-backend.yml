@@ -1,3 +1,4 @@
+
 name: Deploy Backend
 
 on:
@@ -32,7 +33,7 @@ jobs:
 
             mkdir -p uploads processed
 
-            pm2 restart qr-backend || pm2 start dist/app.js --name qr-backend
+            pm2 restart qr-backend --update-env || pm2 start dist/app.js --name qr-backend
             pm2 save
 
             echo "Health check..."
