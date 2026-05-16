@@ -199,21 +199,21 @@ export const processDocument = async (filePath: string, documentId: string): Pro
   }
 };
 
-export const convertPdfToXlsx = async (processedPath: string): Promise<Buffer> => {
+export const convertPdfToDocx = async (processedPath: string): Promise<Buffer> => {
   const pdfPath = path.join(PROCESSED_DIR, processedPath);
-  const tmpDir = path.join(os.tmpdir(), `xlsx-${uuidv4()}`);
+  const tmpDir = path.join(os.tmpdir(), `docx-${uuidv4()}`);
   fs.mkdirSync(tmpDir, { recursive: true });
   const baseName = path.basename(processedPath, '.pdf');
-  const xlsxPath = path.join(tmpDir, `${baseName}.xlsx`);
+  const docxPath = path.join(tmpDir, `${baseName}.docx`);
 
   try {
     await execFileAsync(
       getLibreOfficeCmd(),
-      ['--headless', '--norestore', '--nofirststartwizard', '--convert-to', 'xlsx', '--outdir', tmpDir, pdfPath],
+      ['--headless', '--norestore', '--nofirststartwizard', '--convert-to', 'docx', '--outdir', tmpDir, pdfPath],
       { timeout: 60000 }
     );
-    if (!fs.existsSync(xlsxPath)) throw new Error('Excel fayl yaratilmadi');
-    return fs.promises.readFile(xlsxPath);
+    if (!fs.existsSync(docxPath)) throw new Error('Word fayl yaratilmadi');
+    return await fs.promises.readFile(docxPath);
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }

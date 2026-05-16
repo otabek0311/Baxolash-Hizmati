@@ -4,7 +4,7 @@ import fs from 'fs';
 import { AuditAction } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../utils/prisma';
-import { processDocument, convertPdfToXlsx } from '../services/document.service';
+import { processDocument, convertPdfToDocx } from '../services/document.service';
 
 const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads');
 
@@ -137,16 +137,10 @@ export const downloadDocument = async (req: AuthRequest, res: Response): Promise
       return;
     }
 
-    const format = (req.query.format as string) === 'xlsx' ? 'xlsx' : 'pdf';
-    const isExcelSource = /\.(xlsx|xls)$/i.test(document.originalName);
+    const format = (req.query.format as string) === 'docx' ? 'docx' : 'pdf';
 
-    if (format === 'xlsx' && !isExcelSource) {
-      res.status(400).json({ message: 'Bu hujjat uchun Excel format mavjud emas' });
-      return;
-    }
-
-    const fileBuffer = format === 'xlsx'
-      ? await convertPdfToXlsx(document.processedPath)
+    const fileBuffer = format === 'docx'
+      ? await convertPdfToDocx(document.processedPath)
       : await fs.promises.readFile(
           path.join(path.join(__dirname, '..', '..', 'processed'), document.processedPath)
         );
@@ -167,10 +161,10 @@ export const downloadDocument = async (req: AuthRequest, res: Response): Promise
     });
 
     const baseName = document.originalName.replace(/\.(doc|docx|pdf|xlsx|xls)$/i, '');
-    if (format === 'xlsx') {
-      const xlsxName = baseName + '.xlsx';
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', `attachment; filename="${xlsxName.replace(/[^\x00-\x7F]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(xlsxName)}`);
+    if (format === 'docx') {
+      const docxName = baseName + '.docx';
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="${docxName.replace(/[^\x00-\x7F]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(docxName)}`);
     } else {
       const pdfName = baseName + '.pdf';
       res.setHeader('Content-Type', 'application/pdf');

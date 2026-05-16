@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Info, History, Download, Clock, Loader2, Sheet } from 'lucide-react';
+import { FileText, Info, History, Download, Clock, Loader2, FileDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { api } from '../services/api';
@@ -92,7 +92,7 @@ export const DocumentDetails: React.FC<DocumentDetailsProps> = ({ documentId }) 
     };
   }, [activeTab, documentId]);
 
-  const handleDownload = async (format: 'pdf' | 'xlsx' = 'pdf') => {
+  const handleDownload = async (format: 'pdf' | 'docx' = 'pdf') => {
     if (!doc) return;
     setDownloading(true);
     try {
@@ -104,7 +104,6 @@ export const DocumentDetails: React.FC<DocumentDetailsProps> = ({ documentId }) 
     }
   };
 
-  const isExcel = (name: string) => /\.(xlsx|xls)$/i.test(name);
 
   const tabs = [
     { id: 'pages',   label: t('doc.tabPages'),   icon: FileText },
@@ -145,16 +144,14 @@ export const DocumentDetails: React.FC<DocumentDetailsProps> = ({ documentId }) 
             {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             PDF
           </button>
-          {isExcel(doc.originalName) && (
-            <button
-              onClick={() => handleDownload('xlsx')}
-              disabled={downloading}
-              className="px-5 py-3 bg-green-600 text-white text-xs font-bold rounded-xl hover:bg-green-700 transition-all shadow-lg shadow-green-100 flex items-center gap-2 active:scale-95 disabled:opacity-60"
-            >
-              {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sheet className="w-4 h-4" />}
-              Excel
-            </button>
-          )}
+          <button
+            onClick={() => handleDownload('docx')}
+            disabled={downloading}
+            className="px-5 py-3 bg-green-600 text-white text-xs font-bold rounded-xl hover:bg-green-700 transition-all shadow-lg shadow-green-100 flex items-center gap-2 active:scale-95 disabled:opacity-60"
+          >
+            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+            Word
+          </button>
         </div>
       </div>
 

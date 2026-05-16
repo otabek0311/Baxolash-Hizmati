@@ -75,7 +75,7 @@ export const api = {
     const blob = await res.blob();
     return URL.createObjectURL(blob);
   },
-  downloadDocument: async (id: string, filename: string, format: 'pdf' | 'xlsx' = 'pdf') => {
+  downloadDocument: async (id: string, filename: string, format: 'pdf' | 'docx' = 'pdf') => {
     const token = getToken();
     const dlHeaders: Record<string, string> = {};
     if (token) dlHeaders['Authorization'] = `Bearer ${token}`;
@@ -91,7 +91,7 @@ export const api = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const ext = format === 'xlsx' ? '.xlsx' : '.pdf';
+    const ext = format === 'docx' ? '.docx' : '.pdf';
     a.download = filename.replace(/\.(doc|docx|pdf|xlsx|xls)$/i, '') + ext;
     document.body.appendChild(a);
     a.click();
