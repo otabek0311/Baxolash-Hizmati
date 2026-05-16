@@ -209,7 +209,9 @@ export const convertPdfToDocx = async (processedPath: string): Promise<Buffer> =
   try {
     await execFileAsync(
       getLibreOfficeCmd(),
-      ['--headless', '--norestore', '--nofirststartwizard', '--convert-to', 'docx', '--outdir', tmpDir, pdfPath],
+      ['--headless', '--norestore', '--nofirststartwizard',
+       '--infilter', 'writer_pdf_import',
+       '--convert-to', 'docx', '--outdir', tmpDir, pdfPath],
       { timeout: 60000 }
     );
     if (!fs.existsSync(docxPath)) throw new Error('Word fayl yaratilmadi');

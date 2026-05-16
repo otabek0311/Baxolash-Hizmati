@@ -39,6 +39,8 @@ export const RecentFiles = () => {
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; fileId: string | null; fileName: string }>({
     isOpen: false, fileId: null, fileName: '',
   });
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [dlLoading, setDlLoading] = useState<{ [id: string]: 'pdf' | 'docx' | null }>({});
 
   const fetchDocuments = () => {
     setLoading(true);
@@ -60,11 +62,15 @@ export const RecentFiles = () => {
     }
   };
 
-  const handleDownload = async (file: any, format: 'pdf' | 'docx' = 'pdf') => {
+  const handleDownload = async (file: any, format: 'pdf' | 'docx') => {
+    if (dlLoading[file.id]) return;
+    setDlLoading(prev => ({ ...prev, [file.id]: format }));
     try {
       await api.downloadDocument(file.id, file.originalName, format);
     } catch (err: any) {
-      alert(err.message);
+      setErrorMsg(err.message || 'Yuklab olishda xato');
+    } finally {
+      setDlLoading(prev => ({ ...prev, [file.id]: null }));
     }
   };
 
@@ -84,6 +90,12 @@ export const RecentFiles = () => {
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm flex-1">
+      {errorMsg && (
+        <div className="mx-4 mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center justify-between gap-3">
+          <p className="text-xs font-bold text-red-600 dark:text-red-400">{errorMsg}</p>
+          <button onClick={() => setErrorMsg(null)} className="text-red-400 hover:text-red-600 font-black text-lg leading-none">×</button>
+        </div>
+      )}
       <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-b border-gray-100 dark:border-gray-600 flex items-center justify-between">
         <h3 className="text-xs font-black uppercase text-gray-400 dark:text-gray-300 tracking-widest">{t('dashboard.recentDocs')}</h3>
         <button onClick={fetchDocuments} className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase hover:underline">
@@ -138,17 +150,19 @@ export const RecentFiles = () => {
                         <>
                           <button
                             onClick={() => handleDownload(file, 'pdf')}
-                            className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
+                            disabled={!!dlLoading[file.id]}
+                            className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all disabled:opacity-50"
                             title="PDF yuklab olish"
                           >
-                            <Download className="w-3.5 h-3.5" />
+                            {dlLoading[file.id] === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                           </button>
                           <button
                             onClick={() => handleDownload(file, 'docx')}
-                            className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-all"
+                            disabled={!!dlLoading[file.id]}
+                            className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-all disabled:opacity-50"
                             title="Word yuklab olish"
                           >
-                            <FileDown className="w-3.5 h-3.5" />
+                            {dlLoading[file.id] === 'docx' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
                           </button>
                         </>
                       )}

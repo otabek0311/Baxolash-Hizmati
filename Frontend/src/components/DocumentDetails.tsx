@@ -66,7 +66,8 @@ export const DocumentDetails: React.FC<DocumentDetailsProps> = ({ documentId }) 
   const [activeTab, setActiveTab] = useState('pages');
   const [doc, setDoc] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState(false);
+  const [downloading, setDownloading] = useState<'pdf' | 'docx' | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const pdfUrlRef = useRef<string | null>(null);
@@ -92,15 +93,15 @@ export const DocumentDetails: React.FC<DocumentDetailsProps> = ({ documentId }) 
     };
   }, [activeTab, documentId]);
 
-  const handleDownload = async (format: 'pdf' | 'docx' = 'pdf') => {
-    if (!doc) return;
-    setDownloading(true);
+  const handleDownload = async (format: 'pdf' | 'docx') => {
+    if (!doc || downloading) return;
+    setDownloading(format);
     try {
       await api.downloadDocument(doc.id, doc.originalName, format);
     } catch (err: any) {
-      alert(err.message);
+      setErrorMsg(err.message || 'Yuklab olishda xato');
     } finally {
-      setDownloading(false);
+      setDownloading(null);
     }
   };
 
@@ -138,22 +139,29 @@ export const DocumentDetails: React.FC<DocumentDetailsProps> = ({ documentId }) 
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleDownload('pdf')}
-            disabled={downloading}
+            disabled={downloading !== null}
             className="px-5 py-3 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center gap-2 active:scale-95 disabled:opacity-60"
           >
-            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {downloading === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             PDF
           </button>
           <button
             onClick={() => handleDownload('docx')}
-            disabled={downloading}
+            disabled={downloading !== null}
             className="px-5 py-3 bg-green-600 text-white text-xs font-bold rounded-xl hover:bg-green-700 transition-all shadow-lg shadow-green-100 flex items-center gap-2 active:scale-95 disabled:opacity-60"
           >
-            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+            {downloading === 'docx' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
             Word
           </button>
         </div>
       </div>
+
+      {errorMsg && (
+        <div className="mx-8 mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl flex items-center justify-between gap-4">
+          <p className="text-sm font-bold text-red-600 dark:text-red-400">{errorMsg}</p>
+          <button onClick={() => setErrorMsg(null)} className="text-red-400 hover:text-red-600 font-black text-lg leading-none">×</button>
+        </div>
+      )}
 
       <div className="px-8 pt-6 border-b border-gray-100 dark:border-gray-700">
         <div className="flex gap-8">
