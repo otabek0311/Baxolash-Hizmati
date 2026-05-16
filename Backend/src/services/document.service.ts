@@ -38,15 +38,25 @@ const getLibreOfficeCmd = (): string => {
 
 const wordToPdf = async (inputPath: string): Promise<Buffer> => {
   const tmpDir = path.join(os.tmpdir(), `lo-${uuidv4()}`);
-  fs.mkdirSync(tmpDir, { recursive: true });
+  const profileDir = path.join(tmpDir, 'profile');
+  fs.mkdirSync(profileDir, { recursive: true });
   const baseName = path.basename(inputPath, path.extname(inputPath));
   const outputPath = path.join(tmpDir, `${baseName}.pdf`);
 
   try {
-    const args = ['--headless', '--norestore', '--nofirststartwizard', '--convert-to', 'pdf', '--outdir', tmpDir, inputPath];
+    const args: string[] = [
+      `--env:UserInstallation=file://${profileDir}`,
+      '--headless', '--norestore', '--nofirststartwizard',
+      '--convert-to', 'pdf', '--outdir', tmpDir, inputPath,
+    ];
 
-    await execFileAsync(getLibreOfficeCmd(), args, { timeout: 60000 });
-    if (!fs.existsSync(outputPath)) throw new Error('Word konvertatsiya fayli yaratilmadi');
+    const { stderr } = await execFileAsync(getLibreOfficeCmd(), args, { timeout: 60000 });
+    if (stderr) console.error('[wordToPdf] LO stderr:', stderr.slice(0, 500));
+
+    if (!fs.existsSync(outputPath)) {
+      const found = fs.readdirSync(tmpDir).filter(f => f !== 'profile');
+      throw new Error(`DOCX→PDF muvaffaqiyatsiz. tmpDir: [${found.join(', ')}]`);
+    }
     return await fs.promises.readFile(outputPath);
   } finally {
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
@@ -202,30 +212,42 @@ export const processDocument = async (filePath: string, documentId: string): Pro
 export const convertPdfToDocx = async (processedPath: string): Promise<Buffer> => {
   const pdfPath = path.join(PROCESSED_DIR, processedPath);
   const tmpDir = path.join(os.tmpdir(), `docx-${uuidv4()}`);
-  fs.mkdirSync(tmpDir, { recursive: true });
+  const profileDir = path.join(tmpDir, 'profile');
+  fs.mkdirSync(profileDir, { recursive: true });
   const baseName = path.basename(processedPath, '.pdf');
   const docxPath = path.join(tmpDir, `${baseName}.docx`);
 
+  const makeArgs = (extra: string[]) => [
+    `--env:UserInstallation=file://${profileDir}`,
+    '--headless', '--norestore', '--nofirststartwizard',
+    ...extra,
+    '--convert-to', 'docx', '--outdir', tmpDir, pdfPath,
+  ];
+
   try {
-    await execFileAsync(
+    const { stderr } = await execFileAsync(
       getLibreOfficeCmd(),
-      ['--headless', '--norestore', '--nofirststartwizard',
-       '--infilter=writer_pdf_import',
-       '--convert-to', 'docx', '--outdir', tmpDir, pdfPath],
+      makeArgs(['--infilter=writer_pdf_import']),
       { timeout: 60000 }
     );
+    if (stderr) console.error('[convertPdfToDocx] LO stderr:', stderr.slice(0, 500));
+
     if (!fs.existsSync(docxPath)) {
-      // Fallback: writer_pdf_import filtrini qo'llab-quvvatlamasa, filtersiz qayta sinab ko'r
-      await execFileAsync(
+      // Fallback: infilter yo'q varianti
+      const { stderr: stderr2 } = await execFileAsync(
         getLibreOfficeCmd(),
-        ['--headless', '--norestore', '--nofirststartwizard',
-         '--convert-to', 'docx', '--outdir', tmpDir, pdfPath],
+        makeArgs([]),
         { timeout: 60000 }
       );
+      if (stderr2) console.error('[convertPdfToDocx] fallback stderr:', stderr2.slice(0, 500));
     }
-    if (!fs.existsSync(docxPath)) throw new Error('Word fayl yaratilmadi');
+
+    if (!fs.existsSync(docxPath)) {
+      const found = fs.readdirSync(tmpDir).filter(f => f !== 'profile');
+      throw new Error(`PDF→DOCX muvaffaqiyatsiz. tmpDir: [${found.join(', ')}]`);
+    }
     return await fs.promises.readFile(docxPath);
   } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
   }
 };
