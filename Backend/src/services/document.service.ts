@@ -111,30 +111,29 @@ export const processDocument = async (filePath: string, documentId: string): Pro
     }
 
     // 4-qadam: Har bir sahifaga footer va QR chizish
-    // Kontentga UMUMAN TEGMAYMIZ — sahifani pastdan FOOTER_H ga kengaytiramiz.
-    // MediaBox: [0, -FOOTER_H, width, height] — original kontent o'z joyida qoladi.
+    // Sahifa o'lchami O'ZGARMAYDI (A4 qoladi). Kontent siqilmaydi.
+    // Footer pastki chekkaga (y=0..FOOTER_H) chiziladi — bu hujjatning
+    // pastki oq chegara (margin ~2cm) sohasiga to'g'ri keladi.
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
-      const { width, height } = page.getSize();
+      const { width } = page.getSize();
 
-      // Sahifani pastdan FOOTER_H ga kengaytirish (kontent siljimaydi, reflow yo'q)
-      page.setMediaBox(0, -FOOTER_H, width, height + FOOTER_H);
-
-      // Footer yangi kengaytirilgan qismda (y = -FOOTER_H .. 0)
+      // Oq fon — pastki chekkadagi mavjud kontentni yopadi (odatda oq margin)
       page.drawRectangle({
-        x: 0, y: -FOOTER_H,
+        x: 0, y: 0,
         width, height: FOOTER_H,
-        color: rgb(0.98, 0.98, 0.98),
+        color: rgb(1, 1, 1),
       });
 
+      // Footer chizig'i
       page.drawLine({
-        start: { x: 0, y: 0 },
-        end:   { x: width, y: 0 },
+        start: { x: 0, y: FOOTER_H },
+        end:   { x: width, y: FOOTER_H },
         thickness: 0.5,
         color: rgb(0.8, 0.8, 0.8),
       });
 
-      const footerMidY = -FOOTER_H / 2 - 4;
+      const footerMidY = FOOTER_H / 2 - 4;
 
       page.drawText(`${i + 1} / ${pages.length}`, {
         x: MARGIN + 4, y: footerMidY,
@@ -148,7 +147,7 @@ export const processDocument = async (filePath: string, documentId: string): Pro
 
       page.drawImage(qrImages[i], {
         x: width - QR_SIZE - MARGIN,
-        y: -(FOOTER_H + QR_SIZE) / 2,
+        y: (FOOTER_H - QR_SIZE) / 2,
         width: QR_SIZE, height: QR_SIZE,
       });
     }
