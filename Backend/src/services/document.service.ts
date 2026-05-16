@@ -84,8 +84,8 @@ export const processDocument = async (filePath: string, documentId: string): Pro
       throw new Error('PDF fayl bo\'sh (0 sahifa)');
     }
 
-    const FOOTER_H = 38;
-    const QR_SIZE  = 32;
+    const FOOTER_H = 44;
+    const QR_SIZE  = 40;
     const MARGIN   = 6;
 
     // 1-qadam: Barcha sahifalar uchun token va URL larni oldindan hosil qilish
@@ -114,22 +114,25 @@ export const processDocument = async (filePath: string, documentId: string): Pro
       const page = pages[i];
       const { width } = page.getSize();
 
-      const textY = MARGIN + 2;
+      // QR — chap tomonda (o'ng tomonda imzo joyi bor)
+      page.drawImage(qrImages[i], {
+        x: MARGIN,
+        y: MARGIN,
+        width: QR_SIZE, height: QR_SIZE,
+      });
+
+      const textX = MARGIN + QR_SIZE + 6;
+      const textY1 = MARGIN + 14;
+      const textY2 = MARGIN + 3;
 
       page.drawText(`${i + 1} / ${pages.length}`, {
-        x: MARGIN, y: textY,
+        x: textX, y: textY1,
         size: 7, font, color: rgb(0.55, 0.55, 0.55),
       });
 
       page.drawText('qrhujjat.uz', {
-        x: width / 2 - 20, y: textY,
+        x: textX, y: textY2,
         size: 7, font, color: rgb(0.55, 0.55, 0.55),
-      });
-
-      page.drawImage(qrImages[i], {
-        x: width - QR_SIZE - MARGIN,
-        y: MARGIN,
-        width: QR_SIZE, height: QR_SIZE,
       });
     }
 
