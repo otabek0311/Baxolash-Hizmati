@@ -84,9 +84,9 @@ export const processDocument = async (filePath: string, documentId: string): Pro
       throw new Error('PDF fayl bo\'sh (0 sahifa)');
     }
 
-    const FOOTER_H = 52;
-    const QR_SIZE  = 42;
-    const MARGIN   = 8;
+    const FOOTER_H = 38;
+    const QR_SIZE  = 32;
+    const MARGIN   = 6;
 
     // 1-qadam: Barcha sahifalar uchun token va URL larni oldindan hosil qilish
     const pageData = pages.map((_, i) => {
@@ -108,44 +108,27 @@ export const processDocument = async (filePath: string, documentId: string): Pro
       qrImages.push(await pdfDoc.embedPng(buf));
     }
 
-    // 4-qadam: Har bir sahifaga footer va QR chizish
-    // Sahifa o'lchami O'ZGARMAYDI (A4 qoladi). Kontent siqilmaydi.
-    // Footer pastki chekkaga (y=0..FOOTER_H) chiziladi — bu hujjatning
-    // pastki oq chegara (margin ~2cm) sohasiga to'g'ri keladi.
+    // 4-qadam: Har bir sahifaga QR va minimal footer chizish
+    // Fon yo'q, chiziq yo'q — faqat bet raqam, URL va QR kod.
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
       const { width } = page.getSize();
 
-      // Oq fon — pastki chekkadagi mavjud kontentni yopadi (odatda oq margin)
-      page.drawRectangle({
-        x: 0, y: 0,
-        width, height: FOOTER_H,
-        color: rgb(1, 1, 1),
-      });
-
-      // Footer chizig'i
-      page.drawLine({
-        start: { x: 0, y: FOOTER_H },
-        end:   { x: width, y: FOOTER_H },
-        thickness: 0.5,
-        color: rgb(0.8, 0.8, 0.8),
-      });
-
-      const footerMidY = FOOTER_H / 2 - 4;
+      const textY = MARGIN + 2;
 
       page.drawText(`${i + 1} / ${pages.length}`, {
-        x: MARGIN + 4, y: footerMidY,
-        size: 8, font, color: rgb(0.5, 0.5, 0.5),
+        x: MARGIN, y: textY,
+        size: 7, font, color: rgb(0.55, 0.55, 0.55),
       });
 
       page.drawText('qrhujjat.uz', {
-        x: width / 2 - 24, y: footerMidY,
-        size: 7, font, color: rgb(0.6, 0.6, 0.6),
+        x: width / 2 - 20, y: textY,
+        size: 7, font, color: rgb(0.55, 0.55, 0.55),
       });
 
       page.drawImage(qrImages[i], {
         x: width - QR_SIZE - MARGIN,
-        y: (FOOTER_H - QR_SIZE) / 2,
+        y: MARGIN,
         width: QR_SIZE, height: QR_SIZE,
       });
     }
