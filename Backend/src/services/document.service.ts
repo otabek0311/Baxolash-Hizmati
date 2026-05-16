@@ -84,9 +84,8 @@ export const processDocument = async (filePath: string, documentId: string): Pro
       throw new Error('PDF fayl bo\'sh (0 sahifa)');
     }
 
-    const FOOTER_H = 44;
-    const QR_SIZE  = 40;
-    const MARGIN   = 6;
+    const QR_SIZE = 38;
+    const MARGIN  = 6;
 
     // 1-qadam: Barcha sahifalar uchun token va URL larni oldindan hosil qilish
     const pageData = pages.map((_, i) => {
@@ -108,31 +107,31 @@ export const processDocument = async (filePath: string, documentId: string): Pro
       qrImages.push(await pdfDoc.embedPng(buf));
     }
 
-    // 4-qadam: Har bir sahifaga QR va minimal footer chizish
-    // Fon yo'q, chiziq yo'q — faqat bet raqam, URL va QR kod.
+    // 4-qadam: Har bir sahifaga QR va bet raqami chizish
+    // Hujjat kontentiga UMUMAN TEGMAYMIZ.
+    // Chap pastki burchak: QR kod + "qrhujjat.uz" pastida
+    // O'ng pastki burchak: bet raqami
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
       const { width } = page.getSize();
 
-      // QR — chap tomonda (o'ng tomonda imzo joyi bor)
+      // Chap pastki burchak — QR kod
       page.drawImage(qrImages[i], {
         x: MARGIN,
-        y: MARGIN,
+        y: MARGIN + 10,
         width: QR_SIZE, height: QR_SIZE,
       });
 
-      const textX = MARGIN + QR_SIZE + 6;
-      const textY1 = MARGIN + 14;
-      const textY2 = MARGIN + 3;
-
-      page.drawText(`${i + 1} / ${pages.length}`, {
-        x: textX, y: textY1,
-        size: 7, font, color: rgb(0.55, 0.55, 0.55),
+      // QR ostida — qrhujjat.uz
+      page.drawText('qrhujjat.uz', {
+        x: MARGIN, y: MARGIN + 2,
+        size: 6, font, color: rgb(0.5, 0.5, 0.5),
       });
 
-      page.drawText('qrhujjat.uz', {
-        x: textX, y: textY2,
-        size: 7, font, color: rgb(0.55, 0.55, 0.55),
+      // O'ng pastki burchak — bet raqami
+      page.drawText(`${i + 1} / ${pages.length}`, {
+        x: width - 36, y: MARGIN + QR_SIZE / 2 + 7,
+        size: 8, font, color: rgb(0.5, 0.5, 0.5),
       });
     }
 
