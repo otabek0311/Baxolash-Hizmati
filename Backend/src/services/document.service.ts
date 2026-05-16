@@ -84,8 +84,9 @@ export const processDocument = async (filePath: string, documentId: string): Pro
       throw new Error('PDF fayl bo\'sh (0 sahifa)');
     }
 
-    const QR_SIZE = 38;
-    const MARGIN  = 6;
+    const QR_SIZE = 46;
+    const QR_X    = 28;
+    const QR_Y    = 8;
 
     // 1-qadam: Barcha sahifalar uchun token va URL larni oldindan hosil qilish
     const pageData = pages.map((_, i) => {
@@ -107,31 +108,21 @@ export const processDocument = async (filePath: string, documentId: string): Pro
       qrImages.push(await pdfDoc.embedPng(buf));
     }
 
-    // 4-qadam: Har bir sahifaga QR va bet raqami chizish
+    // 4-qadam: Har bir sahifaga faqat QR kod chizish
     // Hujjat kontentiga UMUMAN TEGMAYMIZ.
-    // Chap pastki burchak: QR kod + "qrhujjat.uz" pastida
-    // O'ng pastki burchak: bet raqami
+    // Original hujjatda bet raqami va imzo joyi bor — biz FAQAT QR qo'shamiz.
+    // Chap pastki burchakdan QR_X/QR_Y ga surilgan.
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
-      const { width } = page.getSize();
 
-      // Chap pastki burchak — QR kod
       page.drawImage(qrImages[i], {
-        x: MARGIN,
-        y: MARGIN + 10,
+        x: QR_X, y: QR_Y,
         width: QR_SIZE, height: QR_SIZE,
       });
 
-      // QR ostida — qrhujjat.uz
       page.drawText('qrhujjat.uz', {
-        x: MARGIN, y: MARGIN + 2,
+        x: QR_X, y: QR_Y - 9,
         size: 6, font, color: rgb(0.5, 0.5, 0.5),
-      });
-
-      // O'ng pastki burchak — bet raqami
-      page.drawText(`${i + 1} / ${pages.length}`, {
-        x: width - 36, y: MARGIN + QR_SIZE / 2 + 7,
-        size: 8, font, color: rgb(0.5, 0.5, 0.5),
       });
     }
 
