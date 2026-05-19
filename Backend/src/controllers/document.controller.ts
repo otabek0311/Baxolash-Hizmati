@@ -64,11 +64,32 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
 export const getDocuments = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
+    const statusFilter = req.query.status as string | undefined;
+    const dateRange = req.query.dateRange as string | undefined;
 
-    const baseWhere = req.user!.role === 'XODIM' ? { uploadedById: req.user!.id } : {};
-    const where = { ...baseWhere, status: { not: 'EXPIRED' as const } };
+    const where: any = req.user!.role === 'XODIM' ? { uploadedById: req.user!.id } : {};
+
+    if (statusFilter) {
+      where.status = statusFilter;
+    } else {
+      where.status = { not: 'EXPIRED' as const };
+    }
+
+    if (dateRange) {
+      const now = new Date();
+      if (dateRange === 'today') {
+        const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0);
+        where.createdAt = { gte: startOfDay };
+      } else if (dateRange === 'week') {
+        const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+        where.createdAt = { gte: weekAgo };
+      } else if (dateRange === 'month') {
+        const monthAgo = new Date(now); monthAgo.setDate(now.getDate() - 30);
+        where.createdAt = { gte: monthAgo };
+      }
+    }
 
     const [documents, total] = await Promise.all([
       prisma.document.findMany({

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -28,42 +28,29 @@ const statusClass: Record<string, string> = {
   EXPIRED:    'bg-red-50 text-red-500',
 };
 
-const inDateRange = (dateStr: string, range: string) => {
-  if (!range) return true;
-  const d = new Date(dateStr);
-  const now = new Date();
-  if (range === 'today') {
-    return d.toDateString() === now.toDateString();
-  }
-  if (range === 'week') {
-    const w = new Date(now); w.setDate(now.getDate() - 7);
-    return d >= w;
-  }
-  if (range === 'month') {
-    const m = new Date(now); m.setDate(now.getDate() - 30);
-    return d >= m;
-  }
-  return true;
-};
+const DOCS_PER_PAGE = 20;
 
 export const Documents = () => {
   const { t } = useLang();
-  const [files, setFiles]           = useState<any[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [statusFilter, setStatus]   = useState('');
-  const [dateFilter, setDate]       = useState('');
+  const [files, setFiles]             = useState<any[]>([]);
+  const [total, setTotal]             = useState(0);
+  const [page, setPage]               = useState(1);
+  const [refreshKey, setRefreshKey]   = useState(0);
+  const [loading, setLoading]         = useState(true);
+  const [statusFilter, setStatus]     = useState('');
+  const [dateFilter, setDate]         = useState('');
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; fileId: string | null; fileName: string }>({
     isOpen: false, fileId: null, fileName: '',
   });
-  const [dlLoading, setDlLoading] = useState<{ [id: string]: 'pdf' | 'docx' | null }>({});
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [dlLoading, setDlLoading]   = useState<{ [id: string]: 'pdf' | 'docx' | null }>({});
+  const [errorMsg, setErrorMsg]     = useState<string | null>(null);
 
   const STATUS_OPTS = [
-    { value: '',          label: t('common.all'),         icon: Filter        },
-    { value: 'READY',     label: t('status.ready'),       icon: CheckCircle   },
-    { value: 'PROCESSING',label: t('status.processing'),  icon: Clock         },
-    { value: 'EXPIRED',   label: t('status.expired'),     icon: AlertCircle   },
-    { value: 'ARCHIVED',  label: t('status.archived'),    icon: ArchiveIcon   },
+    { value: '',           label: t('common.all'),         icon: Filter        },
+    { value: 'READY',      label: t('status.ready'),       icon: CheckCircle   },
+    { value: 'PROCESSING', label: t('status.processing'),  icon: Clock         },
+    { value: 'EXPIRED',    label: t('status.expired'),     icon: AlertCircle   },
+    { value: 'ARCHIVED',   label: t('status.archived'),    icon: ArchiveIcon   },
   ];
   const DATE_OPTS = [
     { value: '',      label: t('common.allTime') },
@@ -73,25 +60,31 @@ export const Documents = () => {
   ];
   const statusLabel: Record<string, string> = {
     PROCESSING: t('status.processing'), READY: t('status.ready'),
-    ARCHIVED: t('status.archived'), EXPIRED: t('status.expired'),
+    ARCHIVED: t('status.archived'),     EXPIRED: t('status.expired'),
   };
 
-  const load = useCallback(() => {
+  useEffect(() => {
     setLoading(true);
-    api.getDocuments(1, 100)
-      .then(res => setFiles(res.documents ?? res))
+    api.getDocuments(page, DOCS_PER_PAGE, statusFilter || undefined, dateFilter || undefined)
+      .then(res => {
+        setFiles(res.documents ?? []);
+        setTotal(res.total ?? 0);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, statusFilter, dateFilter, refreshKey]);
 
-  useEffect(() => { load(); }, [load]);
+  const handleStatusChange = (val: string) => {
+    setStatus(prev => prev === val ? '' : val);
+    setPage(1);
+  };
 
-  const filtered = files.filter(f => {
-    if (statusFilter && f.status !== statusFilter) return false;
-    if (!inDateRange(f.createdAt, dateFilter)) return false;
-    return true;
-  });
+  const handleDateChange = (val: string) => {
+    setDate(prev => prev === val ? '' : val);
+    setPage(1);
+  };
 
+  const totalPages = Math.ceil(total / DOCS_PER_PAGE);
   const hasFilter = statusFilter || dateFilter;
 
   const handleDownload = async (file: any, format: 'pdf' | 'docx') => {
@@ -110,11 +103,26 @@ export const Documents = () => {
     if (!deleteModal.fileId) return;
     try {
       await api.deleteDocument(deleteModal.fileId);
-      setFiles(prev => prev.filter(f => f.id !== deleteModal.fileId));
+      const newTotal = total - 1;
+      const newTotalPages = Math.max(1, Math.ceil(newTotal / DOCS_PER_PAGE));
+      const newPage = Math.min(page, newTotalPages);
+      if (newPage !== page) {
+        setPage(newPage);
+      } else {
+        setRefreshKey(k => k + 1);
+      }
     } catch (err: any) {
       setErrorMsg(err.message || "O'chirishda xato");
     }
   };
+
+  // Visible page numbers (up to 5 around current)
+  const pageNumbers = (() => {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (page <= 3) return [1, 2, 3, 4, 5];
+    if (page >= totalPages - 2) return [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [page - 2, page - 1, page, page + 1, page + 2];
+  })();
 
   return (
     <div className="space-y-6">
@@ -123,7 +131,7 @@ export const Documents = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t('docs.title')}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">{t('docs.subtitle')}</p>
         </div>
-        <button onClick={load} className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest flex-shrink-0 mt-1">
+        <button onClick={() => setRefreshKey(k => k + 1)} className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest flex-shrink-0 mt-1">
           {t('common.refresh')}
         </button>
       </div>
@@ -139,7 +147,7 @@ export const Documents = () => {
             return (
               <button
                 key={opt.value}
-                onClick={() => setStatus(active ? '' : opt.value)}
+                onClick={() => handleStatusChange(opt.value)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all ${
                   active ? cls + ' shadow-sm' : 'text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                 }`}
@@ -158,7 +166,7 @@ export const Documents = () => {
             {DATE_OPTS.map(opt => (
               <button
                 key={opt.value}
-                onClick={() => setDate(dateFilter === opt.value ? '' : opt.value)}
+                onClick={() => handleDateChange(opt.value)}
                 className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
                   dateFilter === opt.value
                     ? 'bg-blue-600 text-white'
@@ -171,7 +179,7 @@ export const Documents = () => {
           </div>
           {hasFilter && (
             <button
-              onClick={() => { setStatus(''); setDate(''); }}
+              onClick={() => { setStatus(''); setDate(''); setPage(1); }}
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold text-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all ml-auto"
             >
               <X className="w-3 h-3" /> {t('common.clearFilter')}
@@ -181,11 +189,11 @@ export const Documents = () => {
 
         {/* Count */}
         <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500">
-          {loading ? '...' : `${filtered.length} ta hujjat${hasFilter ? ` (jami ${files.length} dan)` : ''}`}
+          {loading ? '...' : `${total} ta hujjat`}
         </p>
       </div>
 
-      {/* Table */}
+      {/* Error */}
       {errorMsg && (
         <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center justify-between gap-3">
           <p className="text-xs font-bold text-red-600 dark:text-red-400">{errorMsg}</p>
@@ -193,12 +201,13 @@ export const Documents = () => {
         </div>
       )}
 
+      {/* Table */}
       <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : files.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400 dark:text-gray-500 space-y-2">
             <FileText className="w-8 h-8" />
             <p className="text-xs font-bold uppercase tracking-widest">
@@ -206,81 +215,121 @@ export const Documents = () => {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-50 dark:border-gray-700 text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest bg-gray-50/30 dark:bg-gray-900/30">
-                  <th className="px-4 sm:px-6 py-3 font-black">{t('docs.name')}</th>
-                  <th className="hidden sm:table-cell px-6 py-3">{t('docs.pages')}</th>
-                  <th className="hidden md:table-cell px-6 py-3">{t('docs.uploadedBy')}</th>
-                  <th className="hidden md:table-cell px-6 py-3">{t('common.date')}</th>
-                  <th className="px-4 sm:px-6 py-3">{t('docs.status')}</th>
-                  <th className="px-4 sm:px-6 py-3 text-right">{t('docs.actions')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
-                {filtered.map(file => (
-                  <tr key={file.id} className="text-[11px] hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors group">
-                    <td className="px-4 sm:px-6 py-3 sm:py-4">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-8 h-8 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0">
-                          <FileText className="w-4 h-4" />
-                        </div>
-                        <span className="font-bold text-gray-700 dark:text-gray-200 truncate max-w-[130px] sm:max-w-[200px] md:max-w-[260px]">
-                          {file.originalName}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="hidden sm:table-cell px-6 py-4 text-gray-500 dark:text-gray-400 font-medium">
-                      {file.pageCount || '—'} {t('common.pages')}
-                    </td>
-                    <td className="hidden md:table-cell px-6 py-4 text-gray-500 dark:text-gray-400 font-medium">
-                      {file.uploadedBy?.name || '—'}
-                    </td>
-                    <td className="hidden md:table-cell px-6 py-4 text-gray-500 dark:text-gray-400 font-medium">
-                      {new Date(file.createdAt).toLocaleDateString('uz-UZ')}
-                    </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-4">
-                      <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-tighter ${statusClass[file.status] || 'bg-gray-50 text-gray-500'}`}>
-                        {statusLabel[file.status] || file.status}
-                      </span>
-                    </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-right">
-                      <div className="flex items-center justify-end gap-1 sm:gap-2">
-                        {file.status === 'READY' && (
-                          <>
-                            <button
-                              onClick={() => handleDownload(file, 'pdf')}
-                              disabled={!!dlLoading[file.id]}
-                              className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all disabled:opacity-50"
-                              title="PDF yuklab olish"
-                            >
-                              {dlLoading[file.id] === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                            </button>
-                            <button
-                              onClick={() => handleDownload(file, 'docx')}
-                              disabled={!!dlLoading[file.id]}
-                              className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-all disabled:opacity-50"
-                              title="Word yuklab olish"
-                            >
-                              {dlLoading[file.id] === 'docx' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
-                            </button>
-                          </>
-                        )}
-                        <button
-                          onClick={() => setDeleteModal({ isOpen: true, fileId: file.id, fileName: file.originalName })}
-                          className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
-                          title={t('common.delete')}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-gray-50 dark:border-gray-700 text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest bg-gray-50/30 dark:bg-gray-900/30">
+                    <th className="px-4 sm:px-6 py-3 font-black">{t('docs.name')}</th>
+                    <th className="hidden sm:table-cell px-6 py-3">{t('docs.pages')}</th>
+                    <th className="hidden md:table-cell px-6 py-3">{t('docs.uploadedBy')}</th>
+                    <th className="hidden md:table-cell px-6 py-3">{t('common.date')}</th>
+                    <th className="px-4 sm:px-6 py-3">{t('docs.status')}</th>
+                    <th className="px-4 sm:px-6 py-3 text-right">{t('docs.actions')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                  {files.map(file => (
+                    <tr key={file.id} className="text-[11px] hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors group">
+                      <td className="px-4 sm:px-6 py-3 sm:py-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="w-8 h-8 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0">
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <span className="font-bold text-gray-700 dark:text-gray-200 truncate max-w-[130px] sm:max-w-[200px] md:max-w-[260px]">
+                            {file.originalName}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="hidden sm:table-cell px-6 py-4 text-gray-500 dark:text-gray-400 font-medium">
+                        {file.pageCount || '—'} {t('common.pages')}
+                      </td>
+                      <td className="hidden md:table-cell px-6 py-4 text-gray-500 dark:text-gray-400 font-medium">
+                        {file.uploadedBy?.name || '—'}
+                      </td>
+                      <td className="hidden md:table-cell px-6 py-4 text-gray-500 dark:text-gray-400 font-medium">
+                        {new Date(file.createdAt).toLocaleDateString('uz-UZ')}
+                      </td>
+                      <td className="px-4 sm:px-6 py-3 sm:py-4">
+                        <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-tighter ${statusClass[file.status] || 'bg-gray-50 text-gray-500'}`}>
+                          {statusLabel[file.status] || file.status}
+                        </span>
+                      </td>
+                      <td className="px-4 sm:px-6 py-3 sm:py-4 text-right">
+                        <div className="flex items-center justify-end gap-1 sm:gap-2">
+                          {file.status === 'READY' && (
+                            <>
+                              <button
+                                onClick={() => handleDownload(file, 'pdf')}
+                                disabled={!!dlLoading[file.id]}
+                                className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all disabled:opacity-50"
+                                title="PDF yuklab olish"
+                              >
+                                {dlLoading[file.id] === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                              </button>
+                              <button
+                                onClick={() => handleDownload(file, 'docx')}
+                                disabled={!!dlLoading[file.id]}
+                                className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-all disabled:opacity-50"
+                                title="Word yuklab olish"
+                              >
+                                {dlLoading[file.id] === 'docx' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => setDeleteModal({ isOpen: true, fileId: file.id, fileName: file.originalName })}
+                            className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
+                            title={t('common.delete')}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-t border-gray-50 dark:border-gray-700">
+                <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500">
+                  {(page - 1) * DOCS_PER_PAGE + 1}–{Math.min(page * DOCS_PER_PAGE, total)} / {total}
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPage(p => p - 1)}
+                    disabled={page === 1}
+                    className="px-3 py-1.5 text-[11px] font-bold rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  >
+                    ←
+                  </button>
+                  {pageNumbers.map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`w-8 h-8 text-[11px] font-bold rounded-lg transition-all ${
+                        p === page
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={page === totalPages}
+                    className="px-3 py-1.5 text-[11px] font-bold rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

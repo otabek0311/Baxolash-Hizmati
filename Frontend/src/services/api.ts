@@ -63,7 +63,12 @@ export const api = {
     fd.append('retentionDays', String(retentionDays));
     return uploadFile('/documents/upload', fd);
   },
-  getDocuments: (page = 1, limit = 50) => request('GET', `/documents?page=${page}&limit=${limit}`),
+  getDocuments: (page = 1, limit = 20, status?: string, dateRange?: string) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) params.set('status', status);
+    if (dateRange) params.set('dateRange', dateRange);
+    return request('GET', `/documents?${params}`);
+  },
   getDocument: (id: string) => request('GET', `/documents/${id}`),
   getDocumentPreviewUrl: async (id: string): Promise<string> => {
     const token = getToken();
@@ -109,7 +114,12 @@ export const api = {
   resetPassword: (id: string, password: string) => request('POST', `/users/${id}/reset-password`, { password }),
 
   // Audit
-  getAuditLogs: (params?: string) => request('GET', `/audit${params ? '?' + params : ''}`),
+  getAuditLogs: (page = 1, limit = 50, action?: string, userId?: string) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (action) params.set('action', action);
+    if (userId) params.set('userId', userId);
+    return request('GET', `/audit?${params}`);
+  },
 
   // Settings
   getSettings: () => request('GET', '/settings'),
