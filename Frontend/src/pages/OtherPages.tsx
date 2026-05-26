@@ -30,6 +30,26 @@ const statusClass: Record<string, string> = {
 
 const DOCS_PER_PAGE = 20;
 
+const getDaysRemaining = (expiresAt: string): number =>
+  Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+const ExpiryBadge = ({ expiresAt, status }: { expiresAt: string; status: string }) => {
+  if (status === 'EXPIRED' || status === 'ARCHIVED') return null;
+  const days = getDaysRemaining(expiresAt);
+  if (days > 14) return null;
+  if (days <= 0) return null;
+  const cls = days <= 3
+    ? 'text-red-600 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+    : days <= 7
+    ? 'text-orange-600 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+    : 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
+  return (
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black border ${cls}`}>
+      ⏰ {days} kun qoldi
+    </span>
+  );
+};
+
 export const Documents = () => {
   const { t } = useLang();
   const [files, setFiles]             = useState<any[]>([]);
@@ -236,9 +256,12 @@ export const Documents = () => {
                           <div className="w-8 h-8 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0">
                             <FileText className="w-4 h-4" />
                           </div>
-                          <span className="font-bold text-gray-700 dark:text-gray-200 truncate max-w-[130px] sm:max-w-[200px] md:max-w-[260px]">
-                            {file.originalName}
-                          </span>
+                          <div className="min-w-0">
+                            <span className="font-bold text-gray-700 dark:text-gray-200 truncate max-w-[130px] sm:max-w-[200px] md:max-w-[260px] block">
+                              {file.originalName}
+                            </span>
+                            {file.expiresAt && <ExpiryBadge expiresAt={file.expiresAt} status={file.status} />}
+                          </div>
                         </div>
                       </td>
                       <td className="hidden sm:table-cell px-6 py-4 text-gray-500 dark:text-gray-400 font-medium">
